@@ -1,0 +1,48 @@
+print('hello world')
+import requests
+from bs4 import BeautifulSoup
+
+def get_ott_ranking_2026():
+    # 1. 대상 URL (네이버의 '시리즈온'이나 '통합검색' 결과를 활용)
+    url = "https://search.naver.com/search.naver?query=넷플릭스+인기+순위"
+    
+    # 2. 강력한 '사람 신분증' 세팅 (이게 없으면 빈 화면만 나옵니다)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8',
+        'Referer': 'https://www.naver.com'
+    }
+
+    print("🛰️ 네이버 서버에 접속하여 최신 데이터를 수신 중입니다...")
+
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        # 접속이 성공(200)했는지 확인
+        if response.status_code != 200:
+            print(f"❌ 접속 실패 (에러 코드: {response.status_code})")
+            return
+
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # 3. 네이버 랭킹의 최신 이름표 (클래스)들 시도
+        # 네이버는 여러 구조를 쓰기 때문에, 세 가지 후보를 모두 찾아봅니다.
+        titles = soup.select('.this_text') # 후보 1
+        if not titles:
+            titles = soup.select('.title_box .name') # 후보 2
+        if not titles:
+            titles = soup.select('.item_title') # 후보 3
+
+        print(f"\n🏆 오늘자 넷플릭스 실시간 인기 순위")
+        print("=" * 40)
+
+        # 결과 출력
+        if titles:
+            # 중복 제거를 위해 set을 쓰거나 순서대로 10개만 출력
+            count = 0
+            for title in titles:
+                name = title.get_text().strip()
+                if name: # 빈 텍스트 제외
+                    count += 1
+                    print(f"{count}위 | {name}")
+                if count == 10:
